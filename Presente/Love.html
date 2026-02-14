@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Para mi Princesa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f5ede3;
+            --text-color: #3d2b1f;
+            --heart-ruby: #c0392b;
+            --heart-bright: #e74c3c;
+            --heart-pink: #ff7675;
+            --heart-pale: #fd79a8;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Playfair Display', serif;
+            overflow: hidden; touch-action: none;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; background-color: var(--bg-color);
+            transition: opacity 0.8s ease-out;
+        }
+
+        .btn-love {
+            padding: 15px 50px; font-size: 2rem;
+            background: transparent; border: 2px solid var(--text-color);
+            color: var(--text-color); cursor: pointer;
+            border-radius: 50px; font-family: 'Dancing Script', cursive;
+            outline: none; transition: 0.3s;
+        }
+
+        #main-container {
+            opacity: 0; width: 100%; height: 100%;
+            position: relative; transition: opacity 1.5s ease-in;
+        }
+
+        #love-drop {
+            position: absolute; top: -50px;
+            font-size: 28px; color: var(--heart-bright);
+            opacity: 0; z-index: 60;
+        }
+
+        canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 1; pointer-events: none;
+        }
+
+        /* TEXTO COMPACTO Y PROFUNDO */
+        #text-container {
+            position: absolute; left: 8%; top: 10%; width: 40%;
+            z-index: 50; color: var(--text-color);
+            font-size: 1.25rem; 
+            line-height: 1.35; 
+            font-style: italic;
+            letter-spacing: -0.3px; 
+            text-shadow: 1px 1px 3px rgba(61, 43, 31, 0.4);
+        }
+
+        #counter-container {
+            position: absolute;
+            bottom: 40px; 
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            opacity: 0; 
+            transition: opacity 2s ease;
+            text-shadow: 0px 0px 10px rgba(255,255,255,0.8);
+        }
+
+        .counter-label {
+            margin: 0 0 8px 0; 
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: var(--text-color);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .timer-val {
+            font-weight: 700; font-size: 1.5rem;
+            color: var(--heart-ruby);
+        }
+
+        .falling-heart {
+            position: absolute; z-index: 2;
+            animation: fallDown linear forwards;
+        }
+        @keyframes fallDown { to { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+
+        @media (max-width: 768px) {
+            #text-container { width: 85%; left: 7.5%; top: 5%; text-align: center; font-size: 1.05rem; }
+            #counter-container { bottom: 30px; }
+            .timer-val { font-size: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <button class="btn-love" onclick="beginJourney()">Te Amo</button>
+    </div>
+
+    <div id="main-container">
+        <div id="love-drop">❤</div>
+        <canvas id="treeCanvas"></canvas>
+        <div id="text-container"><div id="typewriter"></div></div>
+        <div id="counter-container">
+            <p class="counter-label">Mi amor por ti comenzó hace...</p>
+            <div id="timer"></div>
+        </div>
+    </div>
+
+    <script>
+        const startDate = new Date('2026-02-10T15:35:00');
+        const messageText = "Para la princesa más hermosa y valiente que he visto:\n\nSi Sientes que ya nada tiene caso, y duele el peso de la realidad siempre tendras refugio en mi abrazo, siempre seras amada sin igual...\n\nPorque si te apagas mi universo se apaga contigo...\n\n-Te Quiero- ❤️‍🩹";
+        
+        const heartColors = ["#c0392b", "#e74c3c", "#ff7675", "#fd79a8", "#ff9ff3"];
+        const canvas = document.getElementById('treeCanvas');
+        const ctx = canvas.getContext('2d');
+        let cw, ch, treeBaseX, treeBaseY, isMobile;
+
+        function resizeCanvas() {
+            cw = canvas.width = window.innerWidth;
+            ch = canvas.height = window.innerHeight;
+            isMobile = cw <= 768;
+            treeBaseX = isMobile ? cw * 0.5 : cw * 0.75; // Movido un poco más a la derecha
+            treeBaseY = ch - 5; 
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function beginJourney() {
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('main-container').style.opacity = '1';
+                animateDrop();
+            }, 800);
+        }
+
+        function animateDrop() {
+            const drop = document.getElementById('love-drop');
+            drop.style.left = (treeBaseX - 14) + 'px';
+            drop.style.opacity = '1';
+            let pos = -50; const endPos = treeBaseY - 30;
+
+            function fall() {
+                pos += 8; drop.style.top = pos + 'px';
+                if (pos < endPos) { requestAnimationFrame(fall); } 
+                else {
+                    drop.style.opacity = '0';
+                    // Árbol 20% más pequeño (initialLen reducido)
+                    const initialLen = isMobile ? ch * 0.15 : ch * 0.18;
+                    const initialWidth = isMobile ? 18 : 24;
+                    growTreeSkeleton(treeBaseX, treeBaseY, initialLen, -90, initialWidth, 1);
+                    setTimeout(bloomMacroHeart, 1200);
+                    setInterval(updateTimer, 1000);
+                    setTimeout(startFallingLeaves, 4000);
+                    setTimeout(typeWriter, 1200);
+                }
+            }
+            fall();
+        }
+
+        function growTreeSkeleton(x, y, len, angle, width, depth) {
+            ctx.beginPath(); ctx.save();
+            ctx.strokeStyle = "#5a463d"; ctx.lineWidth = width; ctx.lineCap = "round";
+            ctx.translate(x, y); ctx.rotate(angle * Math.PI / 180);
+            ctx.moveTo(0, 0); ctx.lineTo(len, 0);
+            ctx.stroke(); ctx.restore();
+
+            let endX = x + len * Math.cos(angle * Math.PI / 180);
+            let endY = y + len * Math.sin(angle * Math.PI / 180);
+
+            // "Recorte" de ramas: limitamos la profundidad a 5 niveles
+            if (depth > 5 || len < 8) return;
+
+            let spread = 12 + (Math.random() * 5); 
+            setTimeout(() => {
+                let newLen = len * 0.7;
+                growTreeSkeleton(endX, endY, newLen, angle - spread, width * 0.7, depth + 1);
+                growTreeSkeleton(endX, endY, newLen, angle + spread, width * 0.7, depth + 1);
+            }, 500 / depth); 
+        }
+
+        function bloomMacroHeart() {
+            let count = 0;
+            const maxHearts = isMobile ? 600 : 800; 
+            // Copa 20% más pequeña (escala reducida)
+            const canopyCy = treeBaseY - (isMobile ? ch * 0.38 : ch * 0.48);
+            const scale = isMobile ? 110 : 150; 
+
+            function drawParticle() {
+                if (count > maxHearts) return;
+                let rx = (Math.random() * 2.8) - 1.4;
+                let ry = (Math.random() * 2.8) - 1.4;
+                let yEq = -ry; 
+                let isInsideHeart = Math.pow(rx*rx + yEq*yEq - 1, 3) - (rx*rx * Math.pow(yEq, 3));
+                if (isInsideHeart <= 0) {
+                    let px = treeBaseX + rx * scale;
+                    let py = canopyCy + ry * scale;
+                    drawHeart(px, py, Math.random() * 12 + 6, heartColors[Math.floor(Math.random() * heartColors.length)]);
+                    count++;
+                }
+                if (count <= maxHearts) requestAnimationFrame(drawParticle);
+            }
+            for(let i=0; i<15; i++) drawParticle();
+        }
+
+        function drawHeart(x, y, size, color) {
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = color; ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(-size/2, -size/2, -size, size/3, 0, size);
+            ctx.bezierCurveTo(size, size/3, size/2, -size/2, 0, 0);
+            ctx.fill(); ctx.restore();
+        }
+
+        function startFallingLeaves() {
+            const canopyCy = treeBaseY - (isMobile ? ch * 0.38 : ch * 0.48);
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.classList.add('falling-heart');
+                heart.innerHTML = '❤';
+                heart.style.left = (treeBaseX + (Math.random() - 0.5) * (isMobile ? 200 : 300)) + 'px';
+                heart.style.top = (canopyCy + (Math.random() - 0.5) * 60) + 'px';
+                heart.style.color = heartColors[Math.floor(Math.random() * heartColors.length)];
+                heart.style.fontSize = (Math.random() * 8 + 6) + 'px';
+                heart.style.animationDuration = (Math.random() * 3 + 5) + 's';
+                document.getElementById('main-container').appendChild(heart);
+                setTimeout(() => heart.remove(), 7000);
+            }, 400);
+        }
+
+        let textIndex = 0;
+        function typeWriter() {
+            if (textIndex < messageText.length) {
+                let char = messageText.charAt(textIndex);
+                document.getElementById("typewriter").innerHTML += char === "\n" ? "<br>" : char;
+                textIndex++;
+                setTimeout(typeWriter, 50);
+            } else { document.getElementById('counter-container').style.opacity = '1'; }
+        }
+
+        function updateTimer() {
+            const now = new Date(); const diff = now - startDate;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / (1000 * 60)) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            document.getElementById('timer').innerHTML = 
+                `<span class="timer-val">${d}</span> d &nbsp; <span class="timer-val">${h}</span> h &nbsp; <span class="timer-val">${m}</span> m &nbsp; <span class="timer-val">${s}</span> s`;
+        }
+    </script>
+</body>
+</html>
